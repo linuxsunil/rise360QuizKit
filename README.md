@@ -45,7 +45,7 @@ Switch to the **QA Preview** tab. Here you can actually take the quiz. Ensure yo
 ---
 
 ## 👨‍💻 About the Developer
-**Sunil** is a Senior INstructional Designer working in the e-learning industry.
+**I am** a Senior INstructional Designer working in the e-learning industry.
 
 * **Philosophy:** I advocate for **Performance-First** instructional design and action mapping over traditional information-heavy courses.
 * **The "Non-Techie" Coder:** While I identify as a non-coder, I build complex AI-integrated tools to solve real-world delivery bottlenecks.
