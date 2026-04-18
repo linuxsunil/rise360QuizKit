@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>QuizKit — Knowledge Check Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── QUIZKIT VARIABLES ── */
+:root{
+  /* Builder chrome */
+  --bg:#F1F5F9;
+  --sb-bg:#0F172A;
+  --sb-border:#1E293B;
+  --sf:#FFFFFF;
+  --sf2:#F8FAFC;
+  --sf3:#F1F5F9;
+
+  /* Indigo accent */
+  --mo:#6366F1;
+  --modk:#4F46E5;
+  --molt:#C7D2FE;
+  --cr:#EEF2FF;
+
+  /* Borders */
+  --bd:rgba(99,102,241,.12);
+  --bdm:rgba(99,102,241,.2);
+
+  /* Text */
+  --tx:#0F172A;
+  --txm:#334155;
+  --mu:#64748B;
+  --ok:#059669;
+  --er:#DC2626;
+
+  /* Radius */
+  --r:8px;--rl:12px;
+
+  /* Fonts */
+  --font:'Inter','Helvetica Neue',Arial,sans-serif;
+  --mono:'JetBrains Mono','Fira Code','Courier New',monospace;
+
+  /* Dynamic brand (quiz output) */
+  --brand-primary:#4F46E5;
+  --brand-accent:#F59E0B;
+
+  /* Sidebar text */
+  --sb-tx:#E2E8F0;
+  --sb-txm:#94A3B8;
+  --sb-mu:#475569;
+  --sb-sf:#1E293B;
+  --sb-sf2:#162032;
+  --sb-bd:rgba(255,255,255,.06);
+  --sb-bdm:rgba(255,255,255,.1);
+}
+
+body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(99,102,241,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+/* ── LAYOUT ── */
+.lay{position:relative;z-index:1;display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+@media(max-width:860px){.lay{grid-template-columns:1fr}}
+
+/* ── SIDEBAR (dark) ── */
+.sb{background:var(--sb-bg);border-right:1px solid var(--sb-border);padding:1.5rem 1.25rem 1.25rem;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb::-webkit-scrollbar{width:3px}.sb::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+
+/* Sidebar text overrides */
+.sb .sl{color:var(--sb-mu);border-color:var(--sb-bd)}
+.sb .sl::after{background:var(--sb-bd)}
+.sb .fi label{color:var(--sb-txm)}
+.sb .fi input[type=text],.sb .fi input[type=password],.sb .fi select,.sb .fi textarea{background:var(--sb-sf);border-color:var(--sb-bdm);color:var(--sb-tx);font-family:var(--font)}
+.sb .fi input:focus,.sb .fi select:focus,.sb .fi textarea:focus{border-color:var(--mo);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+.sb .fi select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2394A3B8' d='M5 7L1 2h8z'/%3E%3C/svg%3E")}
+.sb #gs{color:var(--sb-txm)}
+.sb #gs.ok{color:#34D399}
+.sb #gs.er{color:#F87171}
+
+/* Logo */
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.logo-mark svg{width:18px;height:18px}
+.logo-name{font-size:1.05rem;font-weight:700;color:#F1F5F9;letter-spacing:-.02em}
+.logo-name em{font-style:normal;color:#A5B4FC}
+.logo-v{font-family:var(--mono);font-size:9px;color:var(--sb-mu);background:var(--sb-sf);padding:2px 7px;border-radius:20px;border:1px solid var(--sb-bdm);margin-left:auto}
+
+/* Spectrum bar */
+.pbar{display:flex;gap:2px;margin-bottom:1.25rem;border-radius:4px;overflow:hidden}
+.pbar div{flex:1;height:3px}
+
+.sl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--mu);text-transform:uppercase;margin-bottom:.55rem;margin-top:1rem;display:flex;align-items:center;gap:6px}
+.sl::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+.fi{margin-bottom:.65rem}
+.fi label{display:block;font-size:11px;color:var(--mu);margin-bottom:.3rem;font-weight:500}
+.fi input[type=text],.fi input[type=password],.fi select,.fi textarea{width:100%;background:var(--sf2);border:1px solid var(--bdm);border-radius:var(--r);color:var(--tx);font-family:var(--font);font-size:13px;padding:8px 11px;outline:none;transition:border-color .2s}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--mo);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.fi select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748B' d='M5 7L1 2h8z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;-webkit-appearance:none;cursor:pointer}
+.fi textarea{resize:vertical;min-height:48px;font-size:12px;line-height:1.5}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Colour picker */
+.cprow{display:flex;gap:8px;align-items:center}
+.csw{width:36px;height:34px;border-radius:var(--r);border:1px solid var(--sb-bdm);padding:3px;background:var(--sb-sf);cursor:pointer;flex-shrink:0;overflow:hidden}
+.csw input{width:100%;height:100%;border:none;padding:0;cursor:pointer;border-radius:5px}
+.pdots{display:flex;gap:5px;flex-wrap:wrap;margin-top:.35rem;margin-bottom:.15rem}
+.pd{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.12);cursor:pointer;transition:transform .15s,box-shadow .15s;outline:none;flex-shrink:0}
+.pd:hover{transform:scale(1.25);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.phint{font-size:10px;color:var(--sb-mu);font-family:var(--mono);margin-bottom:.5rem}
+
+/* AI box */
+.ai-box{background:var(--sb-sf);border:1px solid var(--sb-bdm);border-radius:var(--r);padding:.85rem 1rem;margin-top:.2rem}
+.ai-box .fi input,.ai-box .fi select,.ai-box .fi textarea{background:var(--sb-sf2);border-color:var(--sb-bdm);color:var(--sb-tx)}
+.ai-btn{width:100%;padding:9px;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;border:none;border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;margin-top:.5rem;box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.ai-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.ai-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+#aiStatus{font-size:10px;font-family:var(--mono);color:var(--sb-mu);text-align:center;margin-top:.35rem;min-height:13px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:auto;padding-top:1rem}
+.stc{background:var(--sb-sf);border:1px solid var(--sb-bd);border-radius:var(--r);padding:.55rem .4rem;text-align:center}
+.stv{font-size:1.35rem;font-weight:700;color:#A5B4FC;line-height:1;margin-bottom:2px}
+.stl{font-size:9px;color:var(--sb-mu);font-family:var(--mono)}
+
+/* Buttons */
+.brow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:.6rem}
+.brow2{margin-top:5px}
+.btn-s{padding:8px 8px;background:transparent;color:#A5B4FC;border:1px solid rgba(99,102,241,.35);border-radius:var(--r);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;width:100%}
+.btn-s:hover{background:rgba(99,102,241,.12);border-color:var(--mo)}
+.btn-s:disabled{opacity:.25;cursor:not-allowed}
+.btn-p{padding:8px 8px;background:var(--mo);color:#fff;border:1px solid var(--mo);border-radius:var(--r);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;width:100%}
+.btn-p:hover{background:var(--modk);border-color:var(--modk)}
+.btn-p:disabled{opacity:.3;cursor:not-allowed}
+.btn-full{grid-column:1/-1}
+#gs{font-size:10px;text-align:center;margin-top:.4rem;color:var(--sb-mu);min-height:13px;font-family:var(--mono)}
+#gs.ok{color:#34D399}#gs.er{color:#F87171}
+
+/* ── MAIN ── */
+.main{padding:2.5rem 2.5rem 5rem;display:flex;flex-direction:column;gap:1.5rem}
+@media(max-width:860px){.main{padding:1.5rem 1.25rem 3rem}}
+
+/* Hero */
+.hero{margin-bottom:.25rem}
+.hero h1{font-size:2.1rem;font-weight:800;color:var(--tx);line-height:1.1;letter-spacing:-.03em}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,#6366F1,#8B5CF6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:13px;color:var(--mu);margin-top:.5rem;font-weight:400}
+/* GitHub badge */
+.hero-badges{display:flex;align-items:center;gap:8px;margin-top:.85rem;flex-wrap:wrap}
+.badge-gh{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#0F172A;background:#fff;border:1px solid #E2E8F0;border-radius:20px;padding:4px 12px;text-decoration:none;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.badge-gh:hover{border-color:#6366F1;color:#6366F1;box-shadow:0 2px 8px rgba(99,102,241,.15)}
+.badge-gh svg{flex-shrink:0}
+.badge-tag{display:inline-flex;align-items:center;font-size:11px;font-weight:500;color:var(--mu);background:var(--sf);border:1px solid var(--bdm);border-radius:20px;padding:4px 10px}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:2px solid #E2E8F0;gap:0}
+.tab{padding:.6rem 1.1rem;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;user-select:none;background:none;border-top:none;border-left:none;border-right:none;font-weight:500}
+.tab.ac{color:var(--mo);border-bottom-color:var(--mo);font-weight:600}
+.tab:hover:not(.ac){color:var(--tx)}
+.panel{display:none}.panel.ac{display:block}
+
+/* Format guide */
+.guide-card{background:var(--sf);border:1px solid #E2E8F0;border-radius:var(--rl);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+.guide-card::before{content:'';display:block;height:3px;background:linear-gradient(90deg,#6366F1,#8B5CF6,#EC4899,#F59E0B,#10B981,#06B6D4)}
+.guide-tabs{display:flex;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+.gtab{padding:.55rem 1rem;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;text-transform:uppercase}
+.gtab.ac{color:var(--mo);border-bottom-color:var(--mo);background:#fff}
+.guide-body{padding:1rem 1.25rem 1.1rem}
+.code-box{background:#0F172A;border-radius:var(--r);padding:1rem 1.25rem;font-family:var(--mono);font-size:12.5px;line-height:2;white-space:pre;overflow-x:auto;position:relative;border:1px solid #1E293B}
+.code-box .c{color:#475569;font-style:italic}
+.code-box .k{color:#A5B4FC;font-weight:500}
+.code-box .v{color:#6EE7B7}
+.code-box .fb{color:#FCD34D}
+.code-box .co{color:#67E8F9}
+.copy-btn{position:absolute;top:8px;right:10px;font-size:10px;background:rgba(99,102,241,.2);color:#A5B4FC;border:1px solid rgba(99,102,241,.3);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--mono);transition:all .15s}
+.copy-btn:hover{background:var(--mo);color:#fff;border-color:var(--mo)}
+.guide-note{font-size:11px;color:var(--mu);margin-top:.75rem;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+.guide-note svg{flex-shrink:0;margin-top:2px}
+
+/* Paste area */
+.ta-wrap{position:relative}
+.ta{width:100%;min-height:320px;background:var(--sf);border:1px solid #E2E8F0;border-radius:var(--rl);color:var(--tx);font-family:var(--mono);font-size:13px;line-height:1.8;padding:1.25rem 1.5rem;outline:none;resize:vertical;transition:border-color .2s;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.ta:focus{border-color:var(--mo);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.ta::placeholder{color:var(--mu);opacity:.4}
+.ta-count{position:absolute;bottom:10px;right:14px;font-family:var(--mono);font-size:10px;color:var(--mu);pointer-events:none;background:var(--sf);padding:2px 6px;border-radius:4px}
+.parse-msg{font-family:var(--mono);font-size:12px;padding:.65rem 1rem;border-radius:var(--r);display:flex;align-items:center;gap:8px;margin-top:.75rem}
+.parse-msg.ok{background:#ECFDF5;color:#059669;border:1px solid rgba(5,150,105,.2)}
+.parse-msg.er{background:#FEF2F2;color:#DC2626;border:1px solid rgba(220,38,38,.2)}
+
+/* Preview grid */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:9px;margin-top:.85rem}
+.pc{background:var(--sf);border:1px solid #E2E8F0;border-radius:var(--r);padding:.85rem 1rem;animation:fu .2s ease both;transition:all .15s;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.pc:hover{border-color:var(--molt);box-shadow:0 4px 12px rgba(99,102,241,.1);transform:translateY(-1px)}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pc-num{font-family:var(--mono);font-size:9px;color:var(--mu);margin-bottom:.25rem}
+.pc-type{display:inline-block;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;margin-bottom:.35rem;font-weight:600}
+.pc-type.mcq{background:#EEF2FF;color:#4338CA}.pc-type.mmcq{background:#FDF4FF;color:#7E22CE}
+.pc-q{font-size:12px;color:var(--tx);line-height:1.4;margin-bottom:.4rem;font-weight:500}
+.pc-ans{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#059669;background:#ECFDF5;padding:2px 8px;border-radius:20px;margin-right:3px;margin-bottom:3px}
+
+/* QA Panel */
+.qa-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;background:var(--sf);border:1px solid #E2E8F0;border-radius:var(--rl) var(--rl) 0 0;border-bottom:1px solid #F1F5F9}
+.qa-title{font-size:14px;font-weight:700;color:var(--tx)}
+.qa-reset-all{font-size:11px;font-family:var(--mono);color:var(--mu);background:var(--sf3);border:1px solid #E2E8F0;border-radius:6px;padding:4px 12px;cursor:pointer;transition:all .15s}
+.qa-reset-all:hover{color:var(--mo);border-color:var(--mo);background:var(--cr)}
+.qa-cards{background:var(--sf);border:1px solid #E2E8F0;border-top:none;border-radius:0 0 var(--rl) var(--rl);padding:1rem 1.25rem;display:flex;flex-direction:column;gap:1rem}
+.qa-empty{color:var(--mu);font-family:var(--mono);font-size:12px;padding:2rem 0;text-align:center}
+
+.qac{border:1px solid #E2E8F0;border-radius:var(--r);padding:1rem 1.1rem;background:var(--sf);box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.qac-head{display:flex;align-items:center;gap:8px;margin-bottom:.75rem}
+.qac-num{font-family:var(--mono);font-size:10px;color:var(--mu)}
+.qac-badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600}
+.qac-badge.mcq{background:#EEF2FF;color:#4338CA}.qac-badge.mmcq{background:#FDF4FF;color:#7E22CE}
+.qac-reset{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--mu);background:var(--sf3);border:1px solid #E2E8F0;border-radius:6px;padding:3px 10px;cursor:pointer;transition:all .15s}
+.qac-reset:hover{color:var(--mo);border-color:var(--mo)}
+.qac-stem{font-size:14px;font-weight:600;color:var(--tx);line-height:1.45;margin-bottom:.8rem}
+.qac-instr{font-size:11px;color:var(--mu);font-style:italic;margin-bottom:.8rem}
+
+.qac-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1.5px solid #E2E8F0;border-radius:8px;cursor:pointer;margin-bottom:7px;transition:all .15s;font-size:13.5px;color:var(--tx);user-select:none;background:#fff}
+.qac-opt:hover{border-color:var(--mo);background:var(--cr)}
+.qac-opt.sel{border-color:var(--mo);background:var(--cr)}
+.qac-opt.s-ok{border-color:#10B981;background:#ECFDF5;color:#065F46;cursor:default;font-weight:600}
+.qac-opt.s-wrong{border-color:#EF4444;background:#FEF2F2;color:#991B1B;cursor:default}
+.qac-opt.s-hl{border-color:#10B981;background:#ECFDF5;color:#065F46;cursor:default;font-weight:600}
+.qac-opt.locked{cursor:default;pointer-events:none}
+.qac-ctrl{width:18px;height:18px;border-radius:50%;border:1.5px solid #CBD5E1;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;background:#fff}
+.qac-ctrl.sq{border-radius:4px}
+.qac-opt.sel .qac-ctrl{border-color:var(--mo);background:var(--mo);color:#fff}
+.qac-opt.s-ok .qac-ctrl{border-color:#10B981;background:#10B981;color:#fff}
+.qac-opt.s-wrong .qac-ctrl{border-color:#EF4444;background:#EF4444;color:#fff}
+.qac-opt.s-hl .qac-ctrl{border-color:#10B981;background:#10B981;color:#fff}
+.qac-label{flex:1;line-height:1.45}
+
+.qac-fb{padding:.75rem 1rem;border-radius:7px;font-size:12.5px;font-weight:500;margin-top:6px;display:none;line-height:1.5}
+.qac-fb.sh{display:block}
+.qac-fb.ok{background:#ECFDF5;border-left:4px solid #10B981;color:#065F46}
+.qac-fb.pt{background:#FFFBEB;border-left:4px solid #F59E0B;color:#78350F}
+.qac-fb.bad{background:#FEF2F2;border-left:4px solid #EF4444;color:#991B1B}
+.qac-sub-row{display:flex;justify-content:flex-end;margin-top:.65rem}
+.qac-sub{padding:7px 20px;background:var(--mo);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+.qac-sub:hover{background:var(--modk)}.qac-sub:disabled{opacity:.35;cursor:not-allowed}
+
+/* Rise HTML output */
+.rise-wrap{background:var(--sf);border:1px solid #E2E8F0;border-radius:var(--rl);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+.rise-head{padding:.85rem 1.5rem;border-bottom:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:var(--sf);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.rise-head-title{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);font-weight:600}
+.rise-copy-top{font-size:11px;background:var(--mo);color:#fff;border:none;border-radius:7px;padding:8px 18px;cursor:pointer;font-family:var(--mono);transition:all .15s;font-weight:700;letter-spacing:.02em;display:flex;align-items:center;gap:7px;white-space:nowrap;flex-shrink:0}
+.rise-copy-top:hover{background:var(--modk);transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.3)}
+.rise-copy-top.copied{background:#059669 !important;transform:none !important;box-shadow:none !important}
+.rise-code{background:#0F172A;color:#6EE7B7;font-family:var(--mono);font-size:12px;padding:18px;overflow-x:hidden;overflow-y:auto;white-space:pre-wrap;word-break:break-all;min-height:520px;max-height:700px;line-height:1.55;border:1px solid #1E293B}
+.rise-actions{padding:.85rem 1.5rem;border-top:1px solid #F1F5F9;display:flex;gap:10px;justify-content:center}
+.rise-ok{display:none;text-align:center;color:var(--ok);font-weight:700;font-size:12px;padding:.4rem;font-family:var(--mono)}
+.rise-empty{color:var(--mu);font-family:var(--mono);font-size:12px;padding:2.5rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="lay">
+
+<aside class="sb">
+
+  <div class="logo">
+    <div class="logo-mark" id="logoMark">
+      <svg viewBox="0 0 20 20" fill="none">
+        <path d="M4 10h12M10 4v12M6 6l8 8M14 6l-8 8" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="logo-name">Quiz<em>Kit</em></span>
+    <span class="logo-v">v1.0</span>
+  </div>
+
+  <div class="pbar">
+    <div style="background:#6366F1"></div><div style="background:#8B5CF6"></div>
+    <div style="background:#EC4899"></div><div style="background:#F59E0B"></div>
+    <div style="background:#10B981"></div><div style="background:#06B6D4"></div>
+    <div style="background:#3B82F6"></div>
+  </div>
+
+  <div class="sl">Course info</div>
+  <div class="fi"><label>Quiz title</label><input type="text" id="quizTitle" placeholder="Knowledge Check 01: Module 01: Lesson 01" value="Knowledge Check 01: Module 01: Lesson 01"/></div>
+  <div class="fi"><label>Subtitle / Topic</label><input type="text" id="quizSub" placeholder="e.g. Data and AI" value="Data and AI"/></div>
+  <div class="r2">
+    <div class="fi"><label>Questions shown <span style="font-size:10px;font-weight:400">(0=all)</span></label><input type="text" id="qShow" value="0" style="max-width:100%"/></div>
+    <div class="fi"><label>Attempts</label>
+      <select id="qAttempts">
+        <option value="0">Unlimited</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sl">MMCQ generic feedback</div>
+  <div class="fi"><label>All incorrect</label><input type="text" id="fbW" value="Incorrect. None of the selected answers are correct."/></div>
+  <div class="fi"><label>Partially correct</label><input type="text" id="fbP" value="You selected some correct answer(s) but missed others or included incorrect ones."/></div>
+  <div class="fi"><label>All correct</label><input type="text" id="fbC" value="Correct! You identified all the right answers."/></div>
+
+  <div class="sl">Brand customization</div>
+  <div class="r2">
+    <div class="fi">
+      <label>Primary (Header)</label>
+      <div class="cprow">
+        <div class="csw"><input type="color" id="colPicker" value="#002056" oninput="syncCol(this.value, 'primary')"/></div>
+        <input type="text" id="colHex" value="#002056" maxlength="7" oninput="syncHex(this.value, 'primary')"/>
+      </div>
+    </div>
+    <div class="fi">
+      <label>Accent (Buttons)</label>
+      <div class="cprow">
+        <div class="csw"><input type="color" id="accPicker" value="#ffb81c" oninput="syncCol(this.value, 'accent')"/></div>
+        <input type="text" id="accHex" value="#ffb81c" maxlength="7" oninput="syncHex(this.value, 'accent')"/>
+      </div>
+    </div>
+  </div>
+  <div class="pdots">
+    <button class="pd" style="background:#6366F1" onclick="pickCol('#6366F1','#F59E0B')" title="Indigo/Amber"></button>
+    <button class="pd" style="background:#0F172A" onclick="pickCol('#0F172A','#6366F1')" title="Slate/Indigo"></button>
+    <button class="pd" style="background:#0891B2" onclick="pickCol('#0891B2','#F59E0B')" title="Cyan/Amber"></button>
+    <button class="pd" style="background:#059669" onclick="pickCol('#059669','#34D399')" title="Emerald"></button>
+    <button class="pd" style="background:#DC2626" onclick="pickCol('#DC2626','#FCA5A5')" title="Red/Rose"></button>
+    <button class="pd" style="background:#7C3AED" onclick="pickCol('#7C3AED','#DDD6FE')" title="Violet"></button>
+  </div>
+  <div class="phint">&#8593; Quiz output colour presets</div>
+
+  <div class="sl">AI question generator</div>
+  <div class="ai-box">
+    <div class="fi" style="margin-bottom:.55rem">
+      <label>Provider</label>
+      <select id="aiProv" onchange="updAI()">
+        <option value="claude">Claude (Anthropic)</option>
+        <option value="gpt">GPT (OpenAI)</option>
+        <option value="gemini">Gemini (Google)</option>
+        <option value="azure">Azure OpenAI / Copilot</option>
+      </select>
+    </div>
+    <div class="fi" id="aiEpRow" style="display:none;margin-bottom:.55rem">
+      <label>Azure Endpoint</label>
+      <input type="text" id="aiEp" placeholder="https://your-resource.openai.azure.com/..."/>
+    </div>
+    <div class="fi" style="margin-bottom:.55rem">
+      <label>API Key</label>
+      <input type="password" id="aiKey" placeholder="Paste your API key"/>
+    </div>
+    <div class="fi" style="margin-bottom:.55rem">
+      <label>Topic</label>
+      <input type="text" id="aiTopic" placeholder="e.g. Python basics, Fire safety, AI fundamentals"/>
+    </div>
+    <div class="r2" style="margin-bottom:.55rem">
+      <div class="fi" style="margin-bottom:0"><label>No. of Qs</label><input type="text" id="aiNum" value="5"/></div>
+      <div class="fi" style="margin-bottom:0"><label>Type mix</label>
+        <select id="aiMix">
+          <option value="mix" selected>Mixed MCQ+MMCQ</option>
+          <option value="mcq">All MCQ</option>
+          <option value="mmcq">All MMCQ</option>
+        </select>
+      </div>
+    </div>
+    <button class="ai-btn" id="aiBtn" onclick="aiGenerate()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 4H13l-3.5 2.5 1.5 4L7 9l-4 2.5 1.5-4L1 5h4.5z" fill="white"/></svg>
+      Generate Questions
+    </button>
+    <div id="aiStatus"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stc"><div class="stv" id="stQ">0</div><div class="stl">questions</div></div>
+    <div class="stc"><div class="stv" id="stM">0</div><div class="stl">MCQ</div></div>
+    <div class="stc"><div class="stv" id="stMM">0</div><div class="stl">MMCQ</div></div>
+  </div>
+
+  <div class="brow" style="margin-top:.65rem">
+    <button class="btn-s" id="btnQA" onclick="goTab('qa')" disabled>
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 11v2M9 11v2M3 13h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>QA Preview
+    </button>
+    <button class="btn-s" id="btnRise" onclick="goTab('rise')" disabled>
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 5h6M4 7h6M4 9h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Rise HTML
+    </button>
+  </div>
+  <div class="brow2">
+    <button class="btn-s" id="btnDL" onclick="downloadQA()" disabled style="width:100%">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M1 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Download QA HTML
+    </button>
+  </div>
+  <div id="gs"></div>
+</aside>
+
+<main class="main">
+  <div class="hero">
+    <h1>Quiz Converter<br><em id="heroAccent">Paste the Questions and you are good to go!</em></h1>
+    <p>MCQ + MMCQ &middot; AI generation &middot; per-question QA reset &middot; Rise 360 HTML export &middot; unlimited attempts</p>
+    <div class="hero-badges">
+      <a class="badge-gh" href="https://github.com" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        Star on GitHub
+      </a>
+      <span class="badge-tag">Open Source</span>
+      <span class="badge-tag">No install</span>
+      <span class="badge-tag">Single HTML file</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab ac" id="tab-guide" onclick="goTab('guide')">Format Guide</button>
+    <button class="tab" id="tab-paste" onclick="goTab('paste')">Paste Questions</button>
+    <button class="tab" id="tab-qa" onclick="goTab('qa')">QA Preview</button>
+    <button class="tab" id="tab-rise" onclick="goTab('rise')">Rise HTML</button>
+  </div>
+
+  <div class="panel ac" id="panel-guide">
+    <div class="guide-card">
+      <div class="guide-tabs">
+        <div class="gtab ac" id="gt-mcq" onclick="goGuide('mcq')">MCQ</div>
+        <div class="gtab" id="gt-mmcq" onclick="goGuide('mmcq')">MMCQ</div>
+        <div class="gtab" id="gt-multi" onclick="goGuide('multi')">Bulk Paste</div>
+      </div>
+      <div class="guide-body">
+        <div id="gp-mcq">
+          <div class="code-box" id="gcb-mcq"><button class="copy-btn" onclick="copyGuide('mcq')">copy</button><span class="c"># MCQ — one correct answer, mark with *</span>
+<span class="c"># Put Feedback: on the line directly below each option</span>
+
+<span class="k">1.</span> What is the boiling point of water?
+
+<span class="co">A.</span> 90°C
+<span class="fb">Feedback:</span> Incorrect. Water boils at 100°C at sea level.
+
+<span class="co">B.</span> 100°C <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct! Water boils at 100°C at standard pressure.
+
+<span class="co">C.</span> 110°C
+<span class="fb">Feedback:</span> Incorrect. That temperature exceeds normal boiling point.
+
+<span class="co">D.</span> 120°C
+<span class="fb">Feedback:</span> Incorrect. Water would already be steam at this temperature.</div>
+          <div class="guide-note"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#A08070" stroke-width="1.2"/><path d="M7 5v3M7 9.3v.3" stroke="#A08070" stroke-width="1.2" stroke-linecap="round"/></svg>Use <strong>A. B. C. D.</strong> with a period (avoids Word autocorrect). Mark correct with <strong>*</strong> after option text. <strong>Feedback:</strong> goes on the next line.</div>
+        </div>
+        <div id="gp-mmcq" style="display:none">
+          <div class="code-box" id="gcb-mmcq"><button class="copy-btn" onclick="copyGuide('mmcq')">copy</button><span class="c"># MMCQ — 2+ correct answers, each marked with *</span>
+<span class="c"># Generic feedback (all wrong / partial / all correct) set in sidebar</span>
+
+<span class="k">2.</span> Which of the following are mammals?
+
+<span class="co">A.</span> Dolphin <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct! Dolphins are marine mammals.
+
+<span class="co">B.</span> Shark
+<span class="fb">Feedback:</span> Incorrect. Sharks are fish, not mammals.
+
+<span class="co">C.</span> Bat <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct! Bats are the only flying mammals.
+
+<span class="co">D.</span> Eagle
+<span class="fb">Feedback:</span> Incorrect. Eagles are birds, not mammals.</div>
+          <div class="guide-note"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#9b1f44" stroke-width="1.2"/><path d="M7 5v3M7 9.3v.3" stroke="#9b1f44" stroke-width="1.2" stroke-linecap="round"/></svg>Two or more <strong>*</strong> = auto-detected as MMCQ. Per-option feedback shown for MCQ. Generic sidebar feedback used for MMCQ all-wrong / partial / all-correct states.</div>
+        </div>
+        <div id="gp-multi" style="display:none">
+          <div class="code-box"><span class="c"># Paste 1–200 questions together</span>
+<span class="c"># Separate with ONE blank line OR just number them — tool auto-detects "1." "2." etc.</span>
+<span class="c"># Mix MCQ and MMCQ freely — type is auto-detected by number of * markers</span>
+
+<span class="k">1.</span> First question stem?
+
+<span class="co">A.</span> Option
+<span class="fb">Feedback:</span> Feedback text.
+
+<span class="co">B.</span> Option <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct feedback.
+
+<span class="co">C.</span> Option
+<span class="fb">Feedback:</span> Feedback text.
+
+<span class="co">D.</span> Option
+<span class="fb">Feedback:</span> Feedback text.
+
+<span class="k">2.</span> Second question — two * = MMCQ auto-detected
+
+<span class="co">A.</span> Option <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct!
+
+<span class="co">B.</span> Option
+<span class="fb">Feedback:</span> Incorrect.
+
+<span class="co">C.</span> Option <span class="v">*</span>
+<span class="fb">Feedback:</span> Correct!
+
+<span class="co">D.</span> Option
+<span class="fb">Feedback:</span> Incorrect.</div>
+          <div class="guide-note"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#A08070" stroke-width="1.2"/><path d="M7 5v3M7 9.3v.3" stroke="#A08070" stroke-width="1.2" stroke-linecap="round"/></svg>Question numbers like <strong>1.</strong> <strong>20.</strong> <strong>Q1.</strong> are automatically stripped from the stem. Word smart quotes and em-dashes are auto-normalised.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-paste" style="display:none">
+    <div class="ta-wrap">
+      <textarea class="ta" id="pasteArea" oninput="liveparse()" placeholder="Paste your questions here...
+
+1. What is the capital of France?
+
+A. Berlin
+Feedback: Incorrect. Berlin is the capital of Germany.
+
+B. Paris *
+Feedback: Correct! Paris is the capital of France.
+
+C. Rome
+Feedback: Incorrect. Rome is the capital of Italy.
+
+D. Madrid
+Feedback: Incorrect. Madrid is the capital of Spain."></textarea>
+      <div class="ta-count" id="taCount">0 questions</div>
+    </div>
+    <div id="parseMsg"></div>
+    <div id="previewGrid" class="pgrid"></div>
+  </div>
+
+  <div class="panel" id="panel-qa" style="display:none">
+    <div id="qaEmptyMsg" class="qa-empty">&#8592; Paste questions first, then QA each one here.</div>
+    <div id="qaWrap" style="display:none">
+      <div class="qa-toolbar">
+        <div class="qa-title" id="qaToolTitle">QA Preview</div>
+        <button class="qa-reset-all" onclick="resetAllQA()">&#8635; Reset all</button>
+      </div>
+      <div class="qa-cards" id="qaCards"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-rise" style="display:none">
+    <div id="riseEmptyMsg" class="rise-empty">&#8592; Paste questions first, then generate Rise HTML.</div>
+    <div class="rise-wrap" id="riseWrap" style="display:none">
+      <div class="rise-head">
+        <span class="rise-head-title">Generated HTML — Copy &amp; Paste into Rise 360</span>
+        <button class="rise-copy-top" id="riseCopyTopBtn" onclick="copyRise()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="9" height="9" rx="1.5" stroke="white" stroke-width="1.3"/><path d="M2 10V2h8" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Copy HTML for Rise 360
+        </button>
+      </div>
+      <div class="rise-code" id="riseCode"></div>
+      <div class="rise-actions">
+        <button class="btn-s" onclick="downloadRise()" style="max-width:180px">&#8595; Download .html</button>
+      </div>
+      <div class="rise-ok" id="riseOk">&#x2713; Copied to clipboard!</div>
+    </div>
+  </div>
+
+</main>
+</div><script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+var BANK = [];
+var qaStates = [];
+var _riseHTML = '';
+
+// ═══════════════════════════════════════════════════════════
+// COLOUR & WHITE-LABELING
+// ═══════════════════════════════════════════════════════════
+function getCol(type){ 
+  var id = type === 'primary' ? 'colHex' : 'accHex';
+  var val = document.getElementById(id).value;
+  return /^#[0-9a-fA-F]{6}$/.test(val) ? val : (type === 'primary' ? '#002056' : '#ffb81c'); 
+}
+
+function syncCol(v, type){ 
+  var textId = type === 'primary' ? 'colHex' : 'accHex';
+  document.getElementById(textId).value = v; 
+  applyUIColors();
+}
+
+function syncHex(v, type){ 
+  if(/^#[0-9a-fA-F]{6}$/.test(v)) {
+    var pickerId = type === 'primary' ? 'colPicker' : 'accPicker';
+    document.getElementById(pickerId).value = v;
+    applyUIColors();
+  }
+}
+
+function pickCol(primary, accent){ 
+  document.getElementById('colHex').value = primary; 
+  document.getElementById('colPicker').value = primary; 
+  document.getElementById('accHex').value = accent;
+  document.getElementById('accPicker').value = accent;
+  applyUIColors();
+}
+
+function applyUIColors() {
+  var p = getCol('primary');
+  var a = getCol('accent');
+  document.documentElement.style.setProperty('--brand-primary', p);
+  document.documentElement.style.setProperty('--brand-accent', a);
+  var ha = document.getElementById('heroAccent');
+  if(ha) ha.style.cssText='background:linear-gradient(135deg,'+p+','+a+');-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text';
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+var TABS = ['guide','paste','qa','rise'];
+function goTab(t){
+  for(var i=0;i<TABS.length;i++){
+    var n=TABS[i];
+    var tb=document.getElementById('tab-'+n);
+    var pn=document.getElementById('panel-'+n);
+    if(tb){ if(n===t){tb.classList.add('ac');}else{tb.classList.remove('ac');} }
+    if(pn){ pn.style.display=(n===t)?'block':'none'; if(n===t) pn.classList.add('ac'); else pn.classList.remove('ac'); }
+  }
+  if(t==='qa') renderQA();
+  if(t==='rise') buildRise();
+}
+
+// Guide sub-tabs
+var GUIDES = ['mcq','mmcq','multi'];
+function goGuide(g){
+  for(var i=0;i<GUIDES.length;i++){
+    var n=GUIDES[i];
+    var tb=document.getElementById('gt-'+n);
+    var pn=document.getElementById('gp-'+n);
+    if(tb){ if(n===g)tb.classList.add('ac');else tb.classList.remove('ac'); }
+    if(pn) pn.style.display=(n===g)?'block':'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARSER (REFINED REGEX)
+// ═══════════════════════════════════════════════════════════
+function parseQ(raw){
+  if(!raw||!raw.trim()) return [];
+  // Normalise Word smart quotes/dashes
+  raw = raw.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\u2013|\u2014/g,'-');
+  // Smart split on numbered question starts
+  var norm = raw.replace(/\n(\s*Q?\d+[\.\)]\s+)/g,'\n\n$1');
+  var blocks = norm.split(/\n\s*\n/);
+  var qs = [];
+  for(var b=0;b<blocks.length;b++){
+    var block = blocks[b].trim();
+    if(!block) continue;
+    var lines = block.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    if(lines.length<2) continue;
+    function isOpt(l){ return /^\*?\s*[A-Za-z]\s*[.):>]/.test(l); }
+    function isFb(l){ return /^Feedback\s*:/i.test(l); }
+    var stemLines=[],optLines=[],found=false;
+    for(var i=0;i<lines.length;i++){
+      if(!found&&isOpt(lines[i])) found=true;
+      if(found) optLines.push(lines[i]); else stemLines.push(lines[i]);
+    }
+    
+    // REFINED REGEX: Strip "1.", "Q1.", "Question 1:", "01.", etc.
+    var stem = stemLines.join(' ').trim()
+      .replace(/^((Question|Q|0)\s*\d+\s*[:.)-]\s*)+/i,'') // Comprehensive strip
+      .replace(/^(\d+\s*[:.)-]\s*)+/,'')                   // Simple digit strip
+      .trim();
+
+    if(!stem||optLines.length<2) continue;
+    var options=[],correct=[];
+    var i=0;
+    while(i<optLines.length){
+      var line=optLines[i];
+      var m=line.match(/^(\*?)\s*([A-Za-z])\s*[.):>]\s*(.*)$/);
+      if(m){
+        var isC=m[1]==='*';
+        var rest=m[3].replace(/\s*\*\s*$/,'').trim();
+        var fbSplit=rest.split(/\s*Feedback:\s*/i);
+        var txt=fbSplit[0].trim();
+        var fb=fbSplit.length>1?fbSplit[1].trim():'';
+        if(!fb&&i+1<optLines.length&&isFb(optLines[i+1])){
+          fb=optLines[i+1].replace(/^Feedback\s*:\s*/i,'').trim();
+          i++;
+        }
+        if(isC) correct.push(options.length);
+        options.push({text:txt,fb:fb});
+      }
+      i++;
+    }
+    if(options.length<2||!correct.length) continue;
+    var isM=correct.length>1;
+    qs.push({text:stem,type:isM?'mmcq':'mcq',options:options,correct:isM?correct:correct[0]});
+  }
+  return qs;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIVE PARSE
+// ═══════════════════════════════════════════════════════════
+function xe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function liveparse(){
+  var raw = document.getElementById('pasteArea').value;
+  BANK = parseQ(raw);
+  var cnt = BANK.length;
+  document.getElementById('taCount').textContent = cnt+' question'+(cnt!==1?'s':'');
+  updStats();
+  setBtns(cnt===0);
+  var msg = document.getElementById('parseMsg');
+  var grid = document.getElementById('previewGrid');
+  if(!raw.trim()){msg.innerHTML='';grid.innerHTML='';return;}
+  if(!cnt){
+    msg.innerHTML='<div class="parse-msg er"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3M7 9v.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>No valid questions found — check format guide.</div>';
+    grid.innerHTML='';return;
+  }
+  var nm=BANK.filter(function(q){return q.type==='mcq';}).length;
+  var nmm=BANK.filter(function(q){return q.type==='mmcq';}).length;
+  var txt=cnt+' question'+(cnt!==1?'s':'')+' ready';
+  if(nm&&nmm) txt+=' &middot; '+nm+' MCQ, '+nmm+' MMCQ';
+  else if(nmm) txt+=' &middot; all MMCQ';
+  msg.innerHTML='<div class="parse-msg ok"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+txt+'</div>';
+  var h='';
+  for(var i=0;i<BANK.length;i++){
+    var q=BANK[i];
+    var corr=Array.isArray(q.correct)?q.correct:[q.correct];
+    h+='<div class="pc" style="animation-delay:'+(i*.03)+'s">';
+    h+='<div class="pc-num">Q'+(i+1)+'</div>';
+    h+='<div class="pc-type '+q.type+'">'+q.type.toUpperCase()+'</div>';
+    h+='<div class="pc-q">'+xe(q.text)+'</div>';
+    for(var c=0;c<corr.length;c++){
+      h+='<div class="pc-ans"><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'+xe(q.options[corr[c]].text)+'</div>';
+    }
+    h+='</div>';
+  }
+  grid.innerHTML=h;
+}
+
+function updStats(){
+  var nm=BANK.filter(function(q){return q.type==='mcq';}).length;
+  var nmm=BANK.filter(function(q){return q.type==='mmcq';}).length;
+  document.getElementById('stQ').textContent=BANK.length;
+  document.getElementById('stM').textContent=nm;
+  document.getElementById('stMM').textContent=nmm;
+}
+
+function setBtns(disabled){
+  ['btnQA','btnRise','btnDL'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.disabled=disabled;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// QA PREVIEW
+// ═══════════════════════════════════════════════════════════
+function initQA(){
+  qaStates=BANK.map(function(q){return{sel:q.type==='mmcq'?[]:-1,done:false};});
+}
+
+function renderQA(){
+  if(!BANK.length){
+    document.getElementById('qaEmptyMsg').style.display='block';
+    document.getElementById('qaWrap').style.display='none';
+    return;
+  }
+  document.getElementById('qaEmptyMsg').style.display='none';
+  document.getElementById('qaWrap').style.display='block';
+  document.getElementById('qaToolTitle').textContent=document.getElementById('quizTitle').value.trim()||'QA Preview';
+  if(!qaStates.length||qaStates.length!==BANK.length) initQA();
+  var h='';
+  for(var i=0;i<BANK.length;i++) h+=renderCard(i);
+  document.getElementById('qaCards').innerHTML=h;
+}
+
+function renderCard(idx){
+  var q=BANK[idx], st=qaStates[idx];
+  var isM=q.type==='mmcq';
+  var corr=Array.isArray(q.correct)?q.correct:[q.correct];
+  var h='<div class="qac" id="qac-'+idx+'">';
+  h+='<div class="qac-head">';
+  h+='<span class="qac-num">Q'+(idx+1)+'</span>';
+  h+='<span class="qac-badge '+q.type+'">'+q.type.toUpperCase()+'</span>';
+  h+='<button class="qac-reset" onclick="resetCard('+idx+')">&#8635; Reset</button>';
+  h+='</div>';
+  h+='<div class="qac-stem">'+xe(q.text)+'</div>';
+  h+='<div class="qac-instr">'+(isM?'Select all that apply and click Submit.':'Select the correct answer and click Submit.')+'</div>';
+  if(!st.done){
+    for(var j=0;j<q.options.length;j++){
+      var isSel=isM?(st.sel.indexOf(j)>-1):(st.sel===j);
+      h+='<div class="qac-opt'+(isSel?' sel':'')+'" onclick="qaClick('+idx+','+j+')">';
+      h+='<div class="qac-ctrl'+(isM?' sq':'')+'">'+( isSel?(isM?'&#10003;':'&#9679;'):'' )+'</div>';
+      h+='<div class="qac-label">'+xe(q.options[j].text)+'</div></div>';
+    }
+    var hasAns=isM?(st.sel.length>0):(st.sel!==-1);
+    h+='<div class="qac-sub-row"><button class="qac-sub" onclick="qaSubmit('+idx+')" '+(hasAns?'':'disabled')+'>Submit</button></div>';
+  } else {
+    // Show results
+    var selArr=isM?st.sel:[st.sel];
+    var corSet={};
+    corr.forEach(function(c){corSet[c]=true;});
+    var selSet={};
+    selArr.forEach(function(s){selSet[s]=true;});
+    for(var j=0;j<q.options.length;j++){
+      var isC=corSet[j]===true;
+      var isSel=selSet[j]===true;
+      var cls='qac-opt locked';
+      if(isC&&isSel) cls+=' s-ok';
+      else if(!isC&&isSel) cls+=' s-wrong';
+      else if(isC&&!isSel) cls+=' s-hl';
+      h+='<div class="'+cls+'">';
+      h+='<div class="qac-ctrl'+(isM?' sq':'')+'">'+( (isC&&isSel)?'&#10003;':(!isC&&isSel)?'&#10007;':(isC&&!isSel)?'&#10003;':'' )+'</div>';
+      h+='<div class="qac-label">'+xe(q.options[j].text)+'</div></div>';
+    }
+    // Feedback block
+    var fbTxt='', fbCls='ok';
+    var fbW=document.getElementById('fbW').value;
+    var fbP=document.getElementById('fbP').value;
+    var fbC=document.getElementById('fbC').value;
+    if(isM){
+      var anyC=selArr.some(function(x){return corSet[x];});
+      var anyW=selArr.some(function(x){return!corSet[x];});
+      var allC=corr.every(function(c){return selSet[c];})&&!anyW;
+      // Build per-choice feedback bullets for selected options
+      var bullets='<ul style="margin:.5rem 0 .25rem 0;padding-left:1.1rem;list-style:disc;">';
+      selArr.forEach(function(si){
+        var optTxt=xe(q.options[si].text);
+        var optFb=q.options[si].fb?xe(q.options[si].fb):'';
+        bullets+='<li style="margin-bottom:.3rem"><strong>'+optTxt+'</strong>'+(optFb?' — '+optFb:'')+'</li>';
+      });
+      bullets+='</ul>';
+      if(allC){fbTxt=fbC+bullets;fbCls='ok';}
+      else if(!anyC){fbTxt=fbW+bullets+'<strong>The correct answers are highlighted above.</strong>';fbCls='bad';}
+      else{fbTxt=fbP+bullets+'<strong>The correct answers are highlighted above.</strong>';fbCls='pt';}
+    } else {
+      var isRight=selArr[0]===q.correct;
+      var optFb=q.options[selArr[0]]?q.options[selArr[0]].fb:'';
+      if(isRight){fbTxt=optFb;fbCls='ok';}
+      else{fbTxt=optFb+(optFb?' ':'')+'<strong>The correct answer is highlighted above.</strong>';fbCls='bad';}
+    }
+    h+='<div class="qac-fb sh '+fbCls+'">'+fbTxt+'</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function qaClick(idx,j){
+  var q=BANK[idx], st=qaStates[idx];
+  if(st.done) return;
+  var card=document.getElementById('qac-'+idx);
+  var opts=card.querySelectorAll('.qac-opt');
+  if(q.type==='mmcq'){
+    var x=st.sel.indexOf(j);
+    if(x>-1) st.sel.splice(x,1); else st.sel.push(j);
+    var isSel=st.sel.indexOf(j)>-1;
+    opts[j].classList.toggle('sel',isSel);
+    opts[j].querySelector('.qac-ctrl').innerHTML=isSel?'&#10003;':'';
+  } else {
+    var prev=st.sel;
+    st.sel=j;
+    if(prev!==-1&&prev!==j){
+      opts[prev].classList.remove('sel');
+      opts[prev].querySelector('.qac-ctrl').innerHTML='';
+    }
+    opts[j].classList.add('sel');
+    opts[j].querySelector('.qac-ctrl').innerHTML='&#9679;';
+  }
+  var hasAns=q.type==='mmcq'?(st.sel.length>0):(st.sel!==-1);
+  var sub=card.querySelector('.qac-sub');
+  if(sub) sub.disabled=!hasAns;
+}
+
+function qaSubmit(idx){
+  qaStates[idx].done=true;
+  document.getElementById('qac-'+idx).outerHTML=renderCard(idx);
+}
+
+function resetCard(idx){
+  var q=BANK[idx];
+  qaStates[idx]={sel:q.type==='mmcq'?[]:-1,done:false};
+  document.getElementById('qac-'+idx).outerHTML=renderCard(idx);
+}
+
+function resetAllQA(){
+  initQA();
+  renderQA();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RISE HTML BUILDER
+// ═══════════════════════════════════════════════════════════
+function buildRise(){
+  if(!BANK.length){
+    document.getElementById('riseEmptyMsg').style.display='block';
+    document.getElementById('riseWrap').style.display='none';
+    return;
+  }
+  document.getElementById('riseEmptyMsg').style.display='none';
+  document.getElementById('riseWrap').style.display='block';
+  var title=document.getElementById('quizTitle').value.trim()||'Knowledge Check';
+  var sub=document.getElementById('quizSub').value.trim()||'';
+  var colP=getCol('primary');
+  var colA=getCol('accent');
+  var qshow=parseInt(document.getElementById('qShow').value)||0;
+  var sliceN=(qshow>0&&qshow<BANK.length)?qshow:BANK.length;
+  var fbW=document.getElementById('fbW').value;
+  var fbP=document.getElementById('fbP').value;
+  var fbC=document.getElementById('fbC').value;
+  _riseHTML=genRiseHTML(title,sub,colP,colA,sliceN,fbW,fbP,fbC,BANK);
+  document.getElementById('riseCode').textContent=_riseHTML;
+}
+
+function escJ(s){return (s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');}
+function escH(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function genRiseHTML(title,sub,colP,colA,sliceN,fbW,fbP,fbC,bank){
+  // Build BANK JS
+  var bk='var BANK=[\n';
+  for(var i=0;i<bank.length;i++){
+    var q=bank[i];
+    var corr=Array.isArray(q.correct)?q.correct:[q.correct];
+    bk+='  {text:"'+escJ(q.text)+'",type:"'+q.type+'",';
+    if(q.type==='mmcq'){
+      bk+='fbAllWrong:"'+escJ(fbW)+'",fbPartial:"'+escJ(fbP)+'",fbAllCorrect:"'+escJ(fbC)+'",';
+    }
+    bk+='options:[\n';
+    for(var j=0;j<q.options.length;j++){
+      var isC=corr.indexOf(j)>-1;
+      bk+='    {text:"'+escJ(q.options[j].text)+'",correct:'+isC+',fb:"'+escJ(q.options[j].fb)+'"}';
+      if(j<q.options.length-1) bk+=',';
+      bk+='\n';
+    }
+    bk+='  ]}';
+    if(i<bank.length-1) bk+=',';
+    bk+='\n';
+  }
+  bk+='];';
+
+  // Quiz CSS
+  var css=[
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
+    ':root{',
+    '  --primary:'+colP+';',
+    '  --accent:'+colA+';',
+    '  --grey:#474b56;--dark-grey:#212121;',
+    '  --red:#da301c;--green:#00C853;--navy:'+colP+';',
+    '  --bg:#F7F7F7;--border:#DCDCDC;--blue-light:rgba(255,255,255,0.7);--white:#ffffff;',
+    "  --font:Arial,'Helvetica Neue',Helvetica,sans-serif;",
+    '}',
+    "body{font-family:var(--font);font-size:16px;background:var(--bg);color:var(--grey);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px 48px;}",
+    '.quiz-wrap{width:100%;max-width:720px;}',
+    '.quiz-header{background:var(--primary);border-radius:10px 10px 0 0;padding:24px 32px 20px;}',
+    '.quiz-header h1{font-family:var(--font);font-size:1.2rem;font-weight:700;color:var(--white);line-height:1.3;}',
+    '.quiz-header .subtitle{font-size:0.85rem;color:var(--blue-light);margin-top:3px;}',
+    '.progress-track{margin-top:16px;background:rgba(255,255,255,0.15);border-radius:100px;height:5px;}',
+    '.progress-fill{height:5px;border-radius:100px;background:var(--accent);width:0%;transition:width 0.4s ease;}',
+    '.progress-label{font-size:0.75rem;color:rgba(255,255,255,0.55);margin-top:5px;text-align:right;}',
+    '.quiz-card{background:var(--white);border-radius:0 0 10px 10px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:32px;min-height:300px;display:flex;flex-direction:column;}',
+    '.q-number{display:inline-block;background:var(--primary);color:var(--white);font-weight:700;font-size:0.72rem;padding:3px 11px;border-radius:100px;letter-spacing:0.4px;margin-bottom:12px;}',
+    '.q-text{font-weight:700;font-size:1rem;color:var(--dark-grey);line-height:1.55;margin-bottom:6px;}',
+    '.q-instruction{font-size:0.8rem;color:#888;font-style:italic;margin-bottom:18px;}',
+    '.options-list{display:flex;flex-direction:column;gap:9px;margin-bottom:20px;flex:1;}',
+    '.option-item{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border:2px solid var(--border);border-radius:8px;cursor:pointer;background:var(--white);transition:border-color 0.15s,background 0.15s;user-select:none;}',
+    '.option-item:hover:not(.locked){border-color:var(--primary);}',
+    '.option-item.selected{border-color:var(--primary);background:rgba(0,0,0,0.02);}',
+    '.option-item.state-correct{border-color:var(--green);background:#e6faf0;}',
+    '.option-item.state-wrong{border-color:var(--red);background:#fdf0ee;}',
+    '.option-item.state-highlight{border-color:var(--green);background:#e6faf0;}',
+    '.option-item.locked{cursor:default;pointer-events:none;}',
+    '.ctrl{width:19px;height:19px;flex-shrink:0;margin-top:2px;border-radius:50%;border:2px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;transition:border-color 0.15s,background 0.15s;}',
+    '.ctrl.square{border-radius:4px;}',
+    '.option-item.selected .ctrl{border-color:var(--primary);background:var(--primary);}',
+    '.option-item.state-correct .ctrl{border-color:var(--green);background:var(--green);}',
+    '.option-item.state-wrong .ctrl{border-color:var(--red);background:var(--red);}',
+    '.option-item.state-highlight .ctrl{border-color:var(--green);background:var(--green);}',
+    '.ctrl .icon-check,.ctrl .icon-x{display:none;}',
+    '.option-item.selected .ctrl .icon-check{display:block;}',
+    '.option-item.state-correct .ctrl .icon-check{display:block;}',
+    '.option-item.state-wrong .ctrl .icon-x{display:block;}',
+    '.option-item.state-highlight .ctrl .icon-check{display:block;}',
+    '.opt-label{font-size:0.92rem;line-height:1.5;color:var(--dark-grey);flex:1;}',
+    '.option-item.state-correct .opt-label{color:#005c2e;font-weight:700;}',
+    '.option-item.state-wrong .opt-label{color:var(--red);}',
+    '.option-item.state-highlight .opt-label{color:#005c2e;font-weight:700;}',
+    '.feedback{display:none;border-radius:7px;padding:11px 14px;font-size:0.86rem;line-height:1.5;margin-bottom:18px;gap:9px;align-items:flex-start;}',
+    '.feedback.show{display:flex;}',
+    '.feedback.fb-correct{background:#e6faf0;border-left:4px solid var(--green);color:#005c2e;}',
+    '.feedback.fb-wrong{background:#fdf0ee;border-left:4px solid var(--red);color:#8a1a0a;}',
+    '.feedback.fb-partial{background:#fff8e8;border-left:4px solid #ffb81c;color:#7a5000;}',
+    '.fb-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}',
+    '.btn-row{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;}',
+    ".btn{font-family:var(--font);font-weight:700;font-size:0.88rem;padding:10px 26px;border-radius:7px;border:none;cursor:pointer;transition:opacity 0.15s,transform 0.1s;}",
+    '.btn:hover:not(:disabled){opacity:0.88;transform:translateY(-1px);}',
+    '.btn:active:not(:disabled){transform:translateY(0);}',
+    '.btn:disabled{opacity:0.4;cursor:not-allowed;}',
+    '.btn-submit{background:var(--primary);color:var(--white);}',
+    '.btn-next{background:var(--primary);color:var(--white);}',
+    '.btn-retry{background:var(--accent);color:var(--dark-grey);}',
+    '.results-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 0 4px;}',
+    '.score-ring{width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}',
+    '.score-inner{width:82px;height:82px;border-radius:50%;background:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;}',
+    '.score-num{font-weight:700;font-size:1.55rem;color:var(--dark-grey);line-height:1;}',
+    '.score-sub{font-size:0.7rem;color:var(--grey);margin-top:2px;}',
+    '.results-title{font-weight:700;font-size:1.2rem;color:var(--dark-grey);margin-bottom:6px;}',
+    '.results-msg{font-size:0.9rem;color:var(--grey);max-width:380px;line-height:1.6;margin-bottom:24px;}',
+    '@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}',
+    '.fadein{animation:fadeUp 0.28s ease both;}',
+    '@media(max-width:480px){.quiz-header,.quiz-card{padding:20px 18px;}.q-text{font-size:0.95rem;}}'
+  ].join('\n');
+
+  // Quiz JS
+  var js = bk + '\n' +
+'var questions=[],current=0,score=0,submitted=false,selected=[];\n' +
+'var FBW="'+escJ(fbW)+'",FBP="'+escJ(fbP)+'",FBC="'+escJ(fbC)+'";\n' +
+'var SLICE='+sliceN+';\n' +
+'function shuffle(a){var r=a.slice();for(var i=r.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=r[i];r[i]=r[j];r[j]=t;}return r;}\n' +
+'function checkSVG(){return \'<svg class="icon-check" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><\\/svg>\';}\n' +
+'function xSVG(){return \'<svg class="icon-x" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="white" stroke-width="2" stroke-linecap="round"/><\\/svg>\';}\n' +
+'function startQuiz(){questions=shuffle(BANK).slice(0,SLICE);current=0;score=0;renderQ();}\n' +
+'function renderQ(){\n' +
+'  submitted=false;selected=[];\n' +
+'  var q=questions[current];\n' +
+'  var opts=shuffle(q.options.map(function(o){return{text:o.text,correct:o.correct,fb:o.fb};}));\n' +
+'  var isMMCQ=q.type==="mmcq";\n' +
+'  var instr=isMMCQ?"Select all that apply and then click Submit.":"Select the correct answer and then click Submit.";\n' +
+'  var total=questions.length;\n' +
+'  document.getElementById("progressFill").style.width=((current/total)*100)+"%";\n' +
+'  document.getElementById("progressLabel").textContent="Question "+(current+1)+" of "+total;\n' +
+'  var optHTML="";\n' +
+'  for(var i=0;i<opts.length;i++){\n' +
+'    optHTML+=\'<div class="option-item" id="o\'+i+\'" onclick="pick(\'+i+\',\'+isMMCQ+\')">\'+\'<div class="ctrl\'+(isMMCQ?" square":"")+\'">\'+checkSVG()+xSVG()+"<\\/div>"+\'<span class="opt-label">\'+opts[i].text+"<\\/span><\\/div>";\n' +
+'  }\n' +
+'  document.getElementById("quizCard").innerHTML=\'<div class="fadein"><span class="q-number">Q\'+(current+1)+"<\\/span>"+"<div class=\\"q-text\\">"+q.text+"<\\/div>"+"<p class=\\"q-instruction\\">"+instr+"<\\/p>"+"<div class=\\"options-list\\">"+optHTML+"<\\/div>"+"<div class=\\"feedback\\" id=\\"fb\\"><span class=\\"fb-icon\\" id=\\"fbIcon\\"><\\/span><span id=\\"fbText\\"><\\/span><\\/div>"+"<div class=\\"btn-row\\"><button class=\\"btn btn-submit\\" id=\\"subBtn\\" onclick=\\"doSubmit()\\" disabled>Submit<\\/button><\\/div><\\/div>";\n' +
+'  document.getElementById("quizCard")._opts=opts;\n' +
+'  document.getElementById("quizCard")._q=q;\n' +
+'}\n' +
+'function pick(i,multi){\n' +
+'  if(submitted)return;\n' +
+'  if(multi){\n' +
+'    if(selected.indexOf(i)>-1){selected=selected.filter(function(x){return x!==i;});document.getElementById("o"+i).classList.remove("selected");}\n' +
+'    else{selected.push(i);document.getElementById("o"+i).classList.add("selected");}\n' +
+'  }else{\n' +
+'    for(var x=0;x<selected.length;x++){var el=document.getElementById("o"+selected[x]);if(el)el.classList.remove("selected");}\n' +
+'    selected=[i];document.getElementById("o"+i).classList.add("selected");\n' +
+'  }\n' +
+'  document.getElementById("subBtn").disabled=selected.length===0;\n' +
+'}\n' +
+'function doSubmit(){\n' +
+'  if(submitted||selected.length===0)return;\n' +
+'  submitted=true;\n' +
+'  var opts=document.getElementById("quizCard")._opts;\n' +
+'  var q=document.getElementById("quizCard")._q;\n' +
+'  var isMMCQ=q.type==="mmcq";\n' +
+'  var correctIdx=[];\n' +
+'  for(var i=0;i<opts.length;i++){if(opts[i].correct)correctIdx.push(i);}\n' +
+'  var selSet={},corSet={};\n' +
+'  for(var i=0;i<selected.length;i++)selSet[selected[i]]=true;\n' +
+'  for(var i=0;i<correctIdx.length;i++)corSet[correctIdx[i]]=true;\n' +
+'  var isRight=false,fbMsg="",fbClass="fb-wrong",fbIcon="\\u2717";\n' +
+'  if(isMMCQ){\n' +
+'    var anyC=selected.some(function(x){return corSet[x];});\n' +
+'    var anyW=selected.some(function(x){return!corSet[x];});\n' +
+'    var allC=correctIdx.length===selected.length&&selected.every(function(x){return corSet[x];});\n' +
+'    var bullets="<ul style=\\"margin:.5rem 0 .25rem 0;padding-left:1.1rem;list-style:disc;\\">";\n' +
+'    for(var si=0;si<selected.length;si++){var sIdx=selected[si];bullets+="<li style=\\"margin-bottom:.3rem\\"><strong>"+opts[sIdx].text+"<\\/strong>"+(opts[sIdx].fb?" \\u2014 "+opts[sIdx].fb:"")+"<\\/li>";}\n' +
+'    bullets+="<\\/ul>";\n' +
+'    if(allC){isRight=true;fbMsg=FBC+bullets;fbClass="fb-correct";fbIcon="\\u2713";}\n' +
+'    else if(!anyC){fbMsg=FBW+bullets+"<strong>The correct answers are highlighted above.<\\/strong>";fbClass="fb-wrong";}\n' +
+'    else{fbMsg=FBP+bullets+"<strong>The correct answers are highlighted above.<\\/strong>";fbClass="fb-partial";fbIcon="";}\n' +
+'  }else{\n' +
+'    isRight=selected.length===1&&corSet[selected[0]];\n' +
+'    fbMsg=opts[selected[0]].fb;\n' +
+'    if(isRight){fbClass="fb-correct";fbIcon="\\u2713";}\n' +
+'  }\n' +
+'  if(isRight)score++;\n' +
+'  for(var i=0;i<opts.length;i++){\n' +
+'    var el=document.getElementById("o"+i);\n' +
+'    el.classList.add("locked");el.classList.remove("selected");\n' +
+'    if(selSet[i]&&opts[i].correct)el.classList.add("state-correct");\n' +
+'    else if(selSet[i]&&!opts[i].correct)el.classList.add("state-wrong");\n' +
+'    else if(!selSet[i]&&opts[i].correct&&!isRight)el.classList.add("state-highlight");\n' +
+'  }\n' +
+'  var fb=document.getElementById("fb");\n' +
+'  fb.classList.add("show",fbClass);\n' +
+'  document.getElementById("fbIcon").textContent=fbIcon;\n' +
+'  if(isRight){document.getElementById("fbText").innerHTML=fbMsg;}\n' +
+'  else if(isMMCQ){document.getElementById("fbText").innerHTML=fbMsg;}\n' +
+'  else{document.getElementById("fbText").innerHTML=fbMsg+" <strong>The correct answer is highlighted above.<\\/strong>";}\n' +
+'  var isLast=current===questions.length-1;\n' +
+'  document.querySelector(".btn-row").innerHTML=isLast\n' +
+'    ?\'<button class="btn btn-next" onclick="showResults()">View Results &rsaquo;<\\/button>\'\n' +
+'    :\'<button class="btn btn-next" onclick="nextQ()">Next Question &rsaquo;<\\/button>\';\n' +
+'}\n' +
+'function nextQ(){current++;renderQ();window.scrollTo({top:0,behavior:"smooth"});}\n' +
+'function showResults(){\n' +
+'  window.parent.postMessage({type:"complete"},"*");\n' +
+'  var total=questions.length;\n' +
+'  var pct=Math.round((score/total)*100);\n' +
+'  var ringColor=pct>=80?"#00C853":pct>=60?"#ffb81c":"#da301c";\n' +
+'  document.getElementById("progressFill").style.width="100%";\n' +
+'  document.getElementById("progressLabel").textContent="Completed";\n' +
+'  var title,msg;\n' +
+'  if(pct===100){title="Perfect Score!";msg="Outstanding! You answered every question correctly.";}\n' +
+'  else if(pct>=80){title="Great Work!";msg="You scored "+score+" out of "+total+". Solid understanding!";}\n' +
+'  else if(pct>=60){title="Good Effort!";msg="You scored "+score+" out of "+total+". Review and try again.";}\n' +
+'  else{title="Keep Learning!";msg="You scored "+score+" out of "+total+". Review the content and retry.";}\n' +
+'  document.getElementById("quizCard").innerHTML=\'<div class="results-wrap fadein"><div class="score-ring" style="background:conic-gradient(\'+ringColor+\' \'+pct+\'%,#DCDCDC 0)"><div class="score-inner"><span class="score-num">\'+score+"\\/"+total+\'<\\/span><span class="score-sub">correct<\\/span><\\/div><\\/div><div class="results-title">\'+title+\'<\\/div><p class="results-msg">\'+msg+\'<\\/p><div class="btn-row" style="justify-content:center"><button class="btn btn-retry" onclick="startQuiz()">&#8635; Try Again<\\/button><\\/div><\\/div>\';\n' +
+'}\n' +
+'startQuiz();\n';
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="UTF-8"/>',
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>',
+    '<title>'+escH(title)+'</title>',
+    '<style>',
+    css,
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="quiz-wrap">',
+    '  <div class="quiz-header">',
+    '    <h1>'+escH(title)+'</h1>',
+    '    <p class="subtitle">'+escH(sub)+'</p>',
+    '    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>',
+    '    <div class="progress-label" id="progressLabel">Question 1 of '+sliceN+'</div>',
+    '  </div>',
+    '  <div class="quiz-card" id="quizCard"></div>',
+    '</div>',
+    '<script>',
+    js,
+    '<\/script>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+// COPY / DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function copyRise(){
+  buildRise();
+  if(!_riseHTML){return;}
+  function flashBtn(btn, svgPath){
+    if(!btn) return;
+    var orig=btn.innerHTML;
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!';
+    btn.classList.add('copied');
+    setTimeout(function(){btn.innerHTML=orig;btn.classList.remove('copied');},2400);
+  }
+  navigator.clipboard.writeText(_riseHTML).then(function(){
+    var ok=document.getElementById('riseOk');
+    if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},2500);}
+    flashBtn(document.getElementById('riseCopyTopBtn'));
+    flashBtn(document.getElementById('riseCopyMainBtn'));
+  }).catch(function(){
+    var ta=document.createElement('textarea');
+    ta.value=_riseHTML;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');
+    document.body.removeChild(ta);
+    var ok=document.getElementById('riseOk');
+    if(ok){ok.textContent='\u2713 Copied (fallback)';ok.style.display='block';setTimeout(function(){ok.style.display='none';},2500);}
+  });
+}
+
+function downloadRise(){
+  if(!_riseHTML){buildRise();}
+  var title=document.getElementById('quizTitle').value.trim().replace(/\s+/g,'_')||'knowledge_check';
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([_riseHTML],{type:'text/html'}));
+  a.download=title+'_rise.html';
+  a.click();
+  document.getElementById('gs').textContent='\u2713 Rise HTML downloaded';
+  document.getElementById('gs').className='ok';
+}
+
+function downloadQA(){
+  if(!BANK.length) return;
+  var title=document.getElementById('quizTitle').value.trim()||'Knowledge Check';
+  var sub=document.getElementById('quizSub').value.trim()||'';
+  var colP=getCol('primary');
+  var colA=getCol('accent');
+  var fbW=document.getElementById('fbW').value;
+  var fbP=document.getElementById('fbP').value;
+  var fbC=document.getElementById('fbC').value;
+  var html=genQAHTML(title,sub,colP,colA,fbW,fbP,fbC,BANK);
+  var fname=title.replace(/\s+/g,'_')+'_QA.html';
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=fname;
+  a.click();
+  document.getElementById('gs').textContent='\u2713 QA HTML downloaded';
+  document.getElementById('gs').className='ok';
+}
+
+function genQAHTML(title,sub,colP,colA,fbW,fbP,fbC,bank){
+  var bkJSON=JSON.stringify(bank.map(function(q){
+    return {
+      text:q.text,type:q.type,
+      correct:q.correct,
+      options:q.options.map(function(o){return{text:o.text,fb:o.fb};})
+    };
+  }));
+  var css=[
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}',
+    ':root{--primary:'+colP+';--accent:'+colA+';--bg:#FAF7F4;--sf:#fff;--sf2:#F5EFE9;',
+    '  --mo:#A47864;--modk:#7A5648;--molt:#E8D9CF;--bd:rgba(164,120,100,.15);--bdm:rgba(164,120,100,.25);',
+    '  --tx:#2C1F18;--mu:#A08070;--ok:#5B8C5A;--er:#C0392B;--r:10px;--rl:16px;',
+    "  --font:Arial,'Helvetica Neue',Helvetica,sans-serif;--mono:'Courier New',monospace;}",
+    'body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px;line-height:1.6;padding:2rem 1rem 4rem;}',
+    'body::before{content:"";position:fixed;inset:0;background-image:radial-gradient(circle,rgba(164,120,100,.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}',
+    '.qa-page{position:relative;z-index:1;max-width:760px;margin:0 auto;}',
+    '.qa-header{background:var(--primary);border-radius:var(--rl) var(--rl) 0 0;padding:24px 32px 20px;margin-bottom:0;}',
+    '.qa-header h1{font-size:1.15rem;font-weight:700;color:#fff;line-height:1.3;}',
+    '.qa-header .sub{font-size:0.82rem;color:rgba(255,255,255,.65);margin-top:3px;}',
+    '.qa-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;background:var(--sf);border:1px solid var(--bdm);border-top:none;border-bottom:1px solid var(--bd);}',
+    '.qa-tool-left{font-size:13px;font-weight:700;color:var(--tx);}',
+    '.qa-tool-right{display:flex;align-items:center;gap:8px;}',
+    '.qa-score-badge{font-family:var(--mono);font-size:11px;color:var(--mu);background:var(--sf2);border:1px solid var(--bdm);border-radius:20px;padding:3px 12px;}',
+    '.btn-reset-all{font-size:11px;font-family:var(--mono);color:var(--mu);background:var(--sf2);border:1px solid var(--bdm);border-radius:6px;padding:5px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}',
+    '.btn-reset-all:hover{color:var(--modk);border-color:var(--mo);background:#fff;}',
+    '.qa-cards{background:var(--sf);border:1px solid var(--bdm);border-top:none;border-radius:0 0 var(--rl) var(--rl);padding:1.25rem;display:flex;flex-direction:column;gap:1rem;}',
+    '.qac{border:1.5px solid var(--molt);border-radius:var(--r);padding:1rem 1.1rem;background:var(--sf2);}',
+    '.qac-head{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;}',
+    '.qac-num{font-family:var(--mono);font-size:10px;color:var(--mu);}',
+    '.qac-badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:20px;}',
+    '.qac-badge.mcq{background:#e8f4fc;color:#1a6a9a;}.qac-badge.mmcq{background:#fdeef5;color:#9b1f44;}',
+    '.qac-reset{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--mu);background:#fff;border:1px solid var(--bdm);border-radius:6px;padding:3px 10px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px;}',
+    '.qac-reset:hover{color:var(--mo);border-color:var(--mo);}',
+    '.qac-stem{font-size:14px;font-weight:600;color:var(--tx);line-height:1.45;margin-bottom:.6rem;}',
+    '.qac-instr{font-size:11px;color:#999;font-style:italic;margin-bottom:.8rem;}',
+    '.qac-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1.5px solid var(--molt);border-radius:8px;cursor:pointer;margin-bottom:7px;transition:all .15s;font-size:13.5px;color:var(--tx);user-select:none;background:#fff;}',
+    '.qac-opt:hover:not(.locked){border-color:var(--mo);background:var(--sf2);}',
+    '.qac-opt.sel{border-color:var(--mo);background:var(--sf2);}',
+    '.qac-opt.s-ok{border-color:#00C853;background:#e6faf0;color:#005c2e;cursor:default;font-weight:600;}',
+    '.qac-opt.s-wrong{border-color:#da301c;background:#fdf0ee;color:#8a1a0a;cursor:default;}',
+    '.qac-opt.s-hl{border-color:#00C853;background:#e6faf0;color:#005c2e;cursor:default;font-weight:600;}',
+    '.qac-opt.locked{cursor:default;pointer-events:none;}',
+    '.qac-ctrl{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--molt);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;background:#fff;}',
+    '.qac-ctrl.sq{border-radius:4px;}',
+    '.qac-opt.sel .qac-ctrl{border-color:var(--mo);background:var(--mo);color:#fff;}',
+    '.qac-opt.s-ok .qac-ctrl{border-color:#00C853;background:#00C853;color:#fff;}',
+    '.qac-opt.s-wrong .qac-ctrl{border-color:#da301c;background:#da301c;color:#fff;}',
+    '.qac-opt.s-hl .qac-ctrl{border-color:#00C853;background:#00C853;color:#fff;}',
+    '.qac-label{flex:1;line-height:1.45;}',
+    '.qac-fb{padding:.75rem 1rem;border-radius:7px;font-size:12.5px;font-weight:500;margin-top:6px;display:none;line-height:1.5;}',
+    '.qac-fb.sh{display:block;}',
+    '.qac-fb.ok{background:#e6faf0;border-left:4px solid #00C853;color:#005c2e;}',
+    '.qac-fb.pt{background:#fff8e8;border-left:4px solid #ffb81c;color:#7a5000;}',
+    '.qac-fb.bad{background:#fdf0ee;border-left:4px solid #da301c;color:#8a1a0a;}',
+    '.qac-sub-row{display:flex;justify-content:flex-end;margin-top:.65rem;}',
+    '.qac-sub{padding:7px 20px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;}',
+    '.qac-sub:hover{opacity:.85;}.qac-sub:disabled{opacity:.35;cursor:not-allowed;}',
+    '@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}'
+  ].join('\n');
+
+  var js=[
+    'var BANK='+bkJSON+';',
+    'var FBW='+JSON.stringify(fbW)+';',
+    'var FBP='+JSON.stringify(fbP)+';',
+    'var FBC='+JSON.stringify(fbC)+';',
+    'var states=[];',
+    '',
+    'function xe(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
+    '',
+    'function initStates(){',
+    '  states=BANK.map(function(q){return{sel:q.type==="mmcq"?[]:-1,done:false};});',
+    '}',
+    '',
+    'function updScore(){',
+    '  var done=states.filter(function(s){return s.done;}).length;',
+    '  var correct=0;',
+    '  for(var i=0;i<BANK.length;i++){',
+    '    if(!states[i].done) continue;',
+    '    var q=BANK[i],st=states[i];',
+    '    var corr=Array.isArray(q.correct)?q.correct:[q.correct];',
+    '    if(q.type==="mcq"){if(st.sel===corr[0])correct++;}',
+    '    else{',
+    '      var selArr=st.sel;',
+    '      var anyW=selArr.some(function(x){return corr.indexOf(x)<0;});',
+    '      var allC=corr.every(function(c){return selArr.indexOf(c)>-1;});',
+    '      if(allC&&!anyW)correct++;',
+    '    }',
+    '  }',
+    '  var el=document.getElementById("qaScore");',
+    '  if(el) el.textContent=correct+" / "+BANK.length+" correct  ·  "+done+" answered";',
+    '}',
+    '',
+    'function renderCard(idx){',
+    '  var q=BANK[idx],st=states[idx];',
+    '  var isM=q.type==="mmcq";',
+    '  var corr=Array.isArray(q.correct)?q.correct:[q.correct];',
+    '  var h="<div class=\\"qac\\" id=\\"qac-"+idx+"\\" style=\\"animation:fu .2s ease both;animation-delay:"+(idx*.03)+"s\\">";',
+    '  h+="<div class=\\"qac-head\\">";',
+    '  h+="<span class=\\"qac-num\\">Q"+(idx+1)+"<\\/span>";',
+    '  h+="<span class=\\"qac-badge "+q.type+"\\">"+q.type.toUpperCase()+"<\\/span>";',
+    '  h+="<button class=\\"qac-reset\\" onclick=\\"resetCard("+idx+")\\">\u21bb Reset<\\/button>";',
+    '  h+="<\\/div>";',
+    '  h+="<div class=\\"qac-stem\\">"+xe(q.text)+"<\\/div>";',
+    '  h+="<div class=\\"qac-instr\\">"+(isM?"Select all that apply and click Submit.":"Select the correct answer and click Submit.")+"<\\/div>";',
+    '  if(!st.done){',
+    '    for(var j=0;j<q.options.length;j++){',
+    '      var isSel=isM?(st.sel.indexOf(j)>-1):(st.sel===j);',
+    '      h+="<div class=\\"qac-opt"+(isSel?" sel":"")+"\\\" onclick=\\"qaClick("+idx+","+j+")\\\">";',
+    '      h+="<div class=\\"qac-ctrl"+(isM?" sq":"")+"\\">"+(isSel?(isM?"&#10003;":"&#9679;"):"")+"<\\/div>";',
+    '      h+="<div class=\\"qac-label\\">"+xe(q.options[j].text)+"<\\/div><\\/div>";',
+    '    }',
+    '    var hasAns=isM?(st.sel.length>0):(st.sel!==-1);',
+    '    h+="<div class=\\"qac-sub-row\\"><button class=\\"qac-sub\\" onclick=\\"qaSubmit("+idx+")\\" "+(hasAns?"":"disabled")+">Submit<\\/button><\\/div>";',
+    '  } else {',
+    '    var selArr=isM?st.sel:[st.sel];',
+    '    var corSet={},selSet={};',
+    '    corr.forEach(function(c){corSet[c]=true;});',
+    '    selArr.forEach(function(s){selSet[s]=true;});',
+    '    for(var j=0;j<q.options.length;j++){',
+    '      var isC=corSet[j]===true,isSel=selSet[j]===true;',
+    '      var cls="qac-opt locked";',
+    '      if(isC&&isSel)cls+=" s-ok";',
+    '      else if(!isC&&isSel)cls+=" s-wrong";',
+    '      else if(isC&&!isSel)cls+=" s-hl";',
+    '      h+="<div class=\\""+cls+"\\">";',
+    '      h+="<div class=\\"qac-ctrl"+(isM?" sq":"")+"\\">"+((isC&&isSel)?"&#10003;":(!isC&&isSel)?"&#10007;":(isC&&!isSel)?"&#10003;":"")+"<\\/div>";',
+    '      h+="<div class=\\"qac-label\\">"+xe(q.options[j].text)+"<\\/div><\\/div>";',
+    '    }',
+    '    var fbTxt="",fbCls="ok";',
+    '    if(isM){',
+    '      var anyC=selArr.some(function(x){return corSet[x];});',
+    '      var anyW2=selArr.some(function(x){return!corSet[x];});',
+    '      var allC2=corr.every(function(c){return selSet[c];})&&!anyW2;',
+    '      var bullets="<ul style=\\"margin:.5rem 0 .25rem 0;padding-left:1.1rem;list-style:disc;\\">";',
+    '      selArr.forEach(function(si){',
+    '        var ot=xe(q.options[si].text);',
+    '        var of2=q.options[si].fb?xe(q.options[si].fb):"";',
+    '        bullets+="<li style=\\"margin-bottom:.3rem\\"><strong>"+ot+"<\\/strong>"+(of2?" \u2014 "+of2:"")+"<\\/li>";',
+    '      });',
+    '      bullets+="<\\/ul>";',
+    '      if(allC2){fbTxt=FBC+bullets;fbCls="ok";}',
+    '      else if(!anyC){fbTxt=FBW+bullets+"<strong>The correct answers are highlighted above.<\\/strong>";fbCls="bad";}',
+    '      else{fbTxt=FBP+bullets+"<strong>The correct answers are highlighted above.<\\/strong>";fbCls="pt";}',
+    '    } else {',
+    '      var isRight=selArr[0]===corr[0];',
+    '      var optFb=q.options[selArr[0]]?q.options[selArr[0]].fb:"";',
+    '      if(isRight){fbTxt=optFb;fbCls="ok";}',
+    '      else{fbTxt=optFb+(optFb?" ":"")+"<strong>The correct answer is highlighted above.<\\/strong>";fbCls="bad";}',
+    '    }',
+    '    h+="<div class=\\"qac-fb sh "+fbCls+"\\">"+fbTxt+"<\\/div>";',
+    '  }',
+    '  h+="<\\/div>";',
+    '  return h;',
+    '}',
+    '',
+    'function renderAll(){',
+    '  var h="";',
+    '  for(var i=0;i<BANK.length;i++) h+=renderCard(i);',
+    '  document.getElementById("qaCards").innerHTML=h;',
+    '  updScore();',
+    '}',
+    '',
+    'function qaClick(idx,j){',
+    '  var q=BANK[idx],st=states[idx];',
+    '  if(st.done)return;',
+    '  var card=document.getElementById("qac-"+idx);',
+    '  var opts=card.querySelectorAll(".qac-opt");',
+    '  if(q.type==="mmcq"){',
+    '    var x=st.sel.indexOf(j);',
+    '    if(x>-1)st.sel.splice(x,1);else st.sel.push(j);',
+    '    var isSel=st.sel.indexOf(j)>-1;',
+    '    opts[j].classList.toggle("sel",isSel);',
+    '    opts[j].querySelector(".qac-ctrl").innerHTML=isSel?"&#10003;":"";',
+    '  } else {',
+    '    var prev=st.sel;',
+    '    st.sel=j;',
+    '    if(prev!==-1&&prev!==j){',
+    '      opts[prev].classList.remove("sel");',
+    '      opts[prev].querySelector(".qac-ctrl").innerHTML="";',
+    '    }',
+    '    opts[j].classList.add("sel");',
+    '    opts[j].querySelector(".qac-ctrl").innerHTML="&#9679;";',
+    '  }',
+    '  var hasAns=q.type==="mmcq"?(st.sel.length>0):(st.sel!==-1);',
+    '  var sub=card.querySelector(".qac-sub");',
+    '  if(sub)sub.disabled=!hasAns;',
+    '}',
+    '',
+    'function qaSubmit(idx){',
+    '  states[idx].done=true;',
+    '  document.getElementById("qac-"+idx).outerHTML=renderCard(idx);',
+    '  updScore();',
+    '}',
+    '',
+    'function resetCard(idx){',
+    '  var q=BANK[idx];',
+    '  states[idx]={sel:q.type==="mmcq"?[]:-1,done:false};',
+    '  document.getElementById("qac-"+idx).outerHTML=renderCard(idx);',
+    '  updScore();',
+    '}',
+    '',
+    'function resetAll(){',
+    '  initStates();',
+    '  renderAll();',
+    '}',
+    '',
+    'initStates();',
+    'renderAll();'
+  ].join('\n');
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="UTF-8"/>',
+    '<meta name="viewport" content="width=device-width,initial-scale=1"/>',
+    '<title>QA — '+escH(title)+'<\/title>',
+    '<style>',css,'<\/style>',
+    '<\/head>',
+    '<body>',
+    '<div class="qa-page">',
+    '  <div class="qa-header">',
+    '    <h1>'+escH(title)+'<\/h1>',
+    '    <div class="sub">'+escH(sub)+'<\/div>',
+    '  <\/div>',
+    '  <div class="qa-toolbar">',
+    '    <div class="qa-tool-left">QA Review<\/div>',
+    '    <div class="qa-tool-right">',
+    '      <span class="qa-score-badge" id="qaScore">0 / '+bank.length+' correct  ·  0 answered<\/span>',
+    '      <button class="btn-reset-all" onclick="resetAll()">&#8635; Reset all<\/button>',
+    '    <\/div>',
+    '  <\/div>',
+    '  <div class="qa-cards" id="qaCards"><\/div>',
+    '<\/div>',
+    '<script>',js,'<\/script>',
+    '<\/body>',
+    '<\/html>'
+  ].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORMAT GUIDE COPY
+// ═══════════════════════════════════════════════════════════
+var TEMPLATES = {
+  mcq:'1. What is the boiling point of water?\n\nA. 90\u00b0C\nFeedback: Incorrect. Water boils at 100\u00b0C at sea level.\n\nB. 100\u00b0C *\nFeedback: Correct! Water boils at 100\u00b0C at standard pressure.\n\nC. 110\u00b0C\nFeedback: Incorrect. That temperature exceeds normal boiling point.\n\nD. 120\u00b0C\nFeedback: Incorrect. Water would already be steam at this temperature.',
+  mmcq:'2. Which of the following are mammals?\n\nA. Dolphin *\nFeedback: Correct! Dolphins are marine mammals.\n\nB. Shark\nFeedback: Incorrect. Sharks are fish, not mammals.\n\nC. Bat *\nFeedback: Correct! Bats are the only flying mammals.\n\nD. Eagle\nFeedback: Incorrect. Eagles are birds, not mammals.'
+};
+function copyGuide(t){
+  var txt=TEMPLATES[t]||'';
+  navigator.clipboard.writeText(txt).then(function(){
+    var btn=document.querySelector('#gcb-'+t+' .copy-btn');
+    if(btn){var o=btn.innerHTML;btn.innerHTML='copied!';setTimeout(function(){btn.innerHTML=o;},1500);}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI GENERATE
+// ═══════════════════════════════════════════════════════════
+function updAI(){
+  var p=document.getElementById('aiProv').value;
+  document.getElementById('aiEpRow').style.display=p==='azure'?'block':'none';
+}
+
+function aiGenerate(){
+  var prov=document.getElementById('aiProv').value;
+  var key=document.getElementById('aiKey').value.trim();
+  var topic=document.getElementById('aiTopic').value.trim();
+  var nq=parseInt(document.getElementById('aiNum').value)||5;
+  var mix=document.getElementById('aiMix').value;
+  var ep=document.getElementById('aiEp').value.trim();
+  if(!key){alert('Please enter your API key.');return;}
+  if(!topic){alert('Please enter a topic.');return;}
+  var btn=document.getElementById('aiBtn');
+  var status=document.getElementById('aiStatus');
+  btn.disabled=true;
+  status.textContent='Generating...';
+
+  var mixInstr=mix==='mcq'?'All questions must be MCQ (exactly one correct answer, marked with *).':
+               mix==='mmcq'?'All questions must be MMCQ (2-3 correct answers, each marked with *).':
+               'Mix roughly half MCQ and half MMCQ.';
+
+  var prompt='Generate '+nq+' quiz questions about: '+topic+'\n\n'+mixInstr+'\n\nUse this EXACT format for every question:\n\n1. Question stem here?\n\nA. Option text *\nFeedback: Feedback for this option.\n\nB. Option text\nFeedback: Feedback for this option.\n\nC. Option text\nFeedback: Feedback for this option.\n\nD. Option text\nFeedback: Feedback for this option.\n\nRules:\n- Put * directly after the correct option text (before the newline)\n- For MMCQ put * after 2 or 3 option texts\n- Always put Feedback: on the line directly below the option\n- Separate each question with a blank line\n- Number questions 1. 2. 3.\n- Output ONLY the questions, no intro or explanation';
+
+  var done=function(text){
+    if(!text){status.textContent='No response.';btn.disabled=false;return;}
+    var ta=document.getElementById('pasteArea');
+    ta.value=(ta.value.trim()?ta.value.trim()+'\n\n':'')+text.trim();
+    liveparse();
+    goTab('paste');
+    status.textContent='\u2713 Questions added';
+    btn.disabled=false;
+  };
+  var fail=function(e){status.textContent='Error: '+e;btn.disabled=false;};
+
+  if(prov==='claude'){
+    fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-3-5-sonnet-20240620',max_tokens:4000,messages:[{role:'user',content:prompt}]})})
+    .then(function(r){return r.json();}).then(function(d){done(d.content&&d.content[0]&&d.content[0].text);}).catch(function(e){fail(e.message);});
+  } else if(prov==='gpt'){
+    fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o',max_tokens:4000,messages:[{role:'user',content:prompt}]})})
+    .then(function(r){return r.json();}).then(function(d){done(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content);}).catch(function(e){fail(e.message);});
+  } else if(prov==='gemini'){
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})})
+    .then(function(r){return r.json();}).then(function(d){done(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text);}).catch(function(e){fail(e.message);});
+  } else if(prov==='azure'){
+    if(!ep){status.textContent='Please enter Azure endpoint.';btn.disabled=false;return;}
+    fetch(ep,{method:'POST',headers:{'Content-Type':'application/json','api-key':key},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:4000})})
+    .then(function(r){return r.json();}).then(function(d){done(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content);}).catch(function(e){fail(e.message);});
+  }
+}
+
+// Init
+applyUIColors();
+</script>
+</body>
+</html>
