@@ -630,6 +630,8 @@ function parseQ(raw){
   if(!raw||!raw.trim()) return [];
   // Normalise Word smart quotes/dashes
   raw = raw.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/\u2013|\u2014/g,'-');
+  function isOpt(l){ return /^\*?\s*[A-Za-z]\s*[.):>]/.test(l); }
+  function isFb(l){ return /^Feedback\s*:/i.test(l); }
   // Smart split on numbered question starts
   var norm = raw.replace(/\n(\s*Q?\d+[\.\)]\s+)/g,'\n\n$1');
   var blocks = norm.split(/\n\s*\n/);
@@ -637,10 +639,13 @@ function parseQ(raw){
   for(var b=0;b<blocks.length;b++){
     var block = blocks[b].trim();
     if(!block) continue;
-    var lines = block.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    var parts = block.split('\n');
+    var lines = [];
+    for(var li=0;li<parts.length;li++){
+      var trimmed = parts[li].trim();
+      if(trimmed) lines.push(trimmed);
+    }
     if(lines.length<2) continue;
-    function isOpt(l){ return /^\*?\s*[A-Za-z]\s*[.):>]/.test(l); }
-    function isFb(l){ return /^Feedback\s*:/i.test(l); }
     var stemLines=[],optLines=[],found=false;
     for(var i=0;i<lines.length;i++){
       if(!found&&isOpt(lines[i])) found=true;
@@ -691,7 +696,8 @@ function liveparse(){
   BANK = parseQ(raw);
   var cnt = BANK.length;
   document.getElementById('taCount').textContent = cnt+' question'+(cnt!==1?'s':'');
-  updStats();
+  var counts = countTypes(BANK);
+  updStats(counts);
   setBtns(cnt===0);
   var msg = document.getElementById('parseMsg');
   var grid = document.getElementById('previewGrid');
@@ -700,8 +706,8 @@ function liveparse(){
     msg.innerHTML='<div class="parse-msg er"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v3M7 9v.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>No valid questions found — check format guide.</div>';
     grid.innerHTML='';return;
   }
-  var nm=BANK.filter(function(q){return q.type==='mcq';}).length;
-  var nmm=BANK.filter(function(q){return q.type==='mmcq';}).length;
+  var nm=counts.mcq;
+  var nmm=counts.mmcq;
   var txt=cnt+' question'+(cnt!==1?'s':'')+' ready';
   if(nm&&nmm) txt+=' &middot; '+nm+' MCQ, '+nmm+' MMCQ';
   else if(nmm) txt+=' &middot; all MMCQ';
@@ -722,9 +728,20 @@ function liveparse(){
   grid.innerHTML=h;
 }
 
-function updStats(){
-  var nm=BANK.filter(function(q){return q.type==='mcq';}).length;
-  var nmm=BANK.filter(function(q){return q.type==='mmcq';}).length;
+function countTypes(list){
+  var counts = {mcq:0, mmcq:0};
+  for(var i=0;i<list.length;i++){
+    var type = list[i].type;
+    if(type==='mmcq') counts.mmcq++;
+    else if(type==='mcq') counts.mcq++;
+  }
+  return counts;
+}
+
+function updStats(counts){
+  counts = counts || countTypes(BANK);
+  var nm=counts.mcq;
+  var nmm=counts.mmcq;
   document.getElementById('stQ').textContent=BANK.length;
   document.getElementById('stM').textContent=nm;
   document.getElementById('stMM').textContent=nmm;
